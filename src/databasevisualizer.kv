@@ -1,0 +1,24 @@
+#:import TableView table_view.TableView
+#:import Browser browser.Browser
+<MainWindow>:
+    Splitter:
+        id: browser_tab
+        sizable_from: 'right'
+        min_size_hint: 0.1, 1
+        max_size: root.width * 0.9 - graph_view.width
+        size_hint: 0.2, 1
+        Browser:
+            text: 'Database Browser'
+    TableView:
+        id: table_view
+        size_hint: (graph_view.x - browser_tab.right) / root.width, 1
+        pos_hint: {'x': browser_tab.width / root.width}
+    Splitter:
+        id: graph_view
+        sizable_from: 'left'
+        min_size_hint: 0.1, 1
+         max_size: root.width * 0.9 - browser_tab.width
+        size_hint: 0.3, 1
+        pos_hint: {'x': (root.width - self.width) / root.width}
+        Label:
+            text: str(graph_view.max_size)

@@ -1,0 +1,82 @@
+<ListItem>:
+    size_hint: None, None
+    height: button.height + list.height
+    width: button.height + list.width if button.height + list.width > button.width * 2 + label.width else button.width * 2 + label.width
+    ToggleButton:
+        id: button
+        size_hint: None, None
+        height: root.p_height
+        width: self.height
+        pos_hint: {'top': 1}
+        on_state: root.dispatch('on_expand') if self.state == 'down' else root.dispatch('on_contract')
+    Label:
+        id: label
+        text: ('' if root.name is None else root.name) + ' ' + (str(len(list.children)) if root.show_children else '')
+        size_hint: None, None
+        height: root.p_height
+        width: self.texture_size[0]
+        x: self.height * 2
+        pos_hint: {'top': 1}
+    GridLayout:
+        cols: 1
+        id: list
+        size_hint: None, None
+        size: self.minimum_size if button.state == 'down' else (0, 0)
+        opacity: 0 if button.state != 'down' else 1
+        x: root.p_height
+
+<ServerListItem>:
+    ListItem:
+        id: databases
+        name: 'databases'
+        on_expand: root.dispatch('on_expand')
+        show_children: True
+
+<DatabaseListItem>:
+    ListItem:
+        id: tables
+        name: 'tables'
+        on_expand: root.dispatch('on_expand', 'tables')
+        show_children: True
+
+<ColumnListItem>:
+    size_hint: None, None
+    size: label.size
+    Label:
+        id: label
+        text: '' if root.name is None else root.name
+        size_hint: None, None
+        height: root.p_height
+        width: self.texture_size[0]
+
+<Browser>:
+    Button:
+        size_hint: None, 0.05
+        width: self.height
+        pos_hint: {'top': 1}
+    Button:
+        size_hint: None, 0.05
+        width: self.height
+        pos_hint: {'top': 1}
+        x: self.height
+    Button:
+        size_hint: None, 0.05
+        width: self.height
+        pos_hint: {'top': 1}
+        x: self.height * 2
+    Button:
+        size_hint: None, 0.05
+        width: self.height
+        pos_hint: {'right': 1, 'top': 1}
+    ScrollView:
+        id: scroll
+        size_hint: 1, 0.95
+        bar_width: self.width * 0.025
+        effect_cls: 'ScrollEffect'
+        scroll_type: ['bars']
+        GridLayout:
+            cols: 1
+            id: list
+            size_hint: None, None
+            size: self.minimum_size
+            pos_hint: {'top': 1}
