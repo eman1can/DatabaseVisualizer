@@ -1,30 +1,64 @@
 <ListItem>:
+    # This sizes the browser node so that it is hidden when deactivated
     size_hint: None, None
     height: button.height + list.height
     width: button.height + list.width if button.height + list.width > button.width * 2 + label.width else button.width * 2 + label.width
+    # draw the salmon highlight and the selection border
+    canvas:
+        Color:
+            rgba: 1, 0.7, 0.7, 1 if root.selected else 0
+        Rectangle:
+            size: self.width - root.p_height, root.p_height
+            pos: root.p_height * 1.5, self.height - root.p_height
+        Color:
+            rgba: 1, 1, 1, 1 if root.selectable else 0
+        Line:
+            width: root.p_height * 0.025
+            points: root.p_height * 1.5, self.height - root.p_height, self.width + root.p_height * 0.5, self.height - root.p_height, self.width + root.p_height * 0.5, self.height, root.p_height * 1.5, self.height, root.p_height * 1.5, self.height - root.p_height
+        Color:
+            rgba: 1, 1, 1, 1
+    # This is the hidden selection button that detects the double tap
+    Button:
+        id: select
+        size_hint: None, 1
+        width: root.width - root.p_height
+        x: root.p_height
+        pos_hint: {'top': 1}
+        disabled: False if root.selectable else True
+        opacity: 0
+        on_touch_down: root.on_select(*args)
+    # This is the main arrow button that toggles the open and closed
     ToggleButton:
         id: button
         size_hint: None, None
         height: root.p_height
         width: self.height
         pos_hint: {'top': 1}
+        background_normal: '../res/arrow_right.png'
+        background_down: '../res/arrow_down.png'
+        border: [0, 0, 0, 0]
         on_state: root.dispatch('on_expand') if self.state == 'down' else root.dispatch('on_contract')
+    # This is the main label that displays your table or database name
     Label:
         id: label
         text: ('' if root.name is None else root.name) + ' ' + (str(len(list.children)) if root.show_children else '')
         size_hint: None, None
         height: root.p_height
         width: self.texture_size[0]
+        color: (0, 0, 0, 1) if root.selected else (1, 1, 1, 1)
         x: self.height * 2
         pos_hint: {'top': 1}
+    # We want to be able to put nodes into other nodes, so we have the collapsable list
     GridLayout:
         cols: 1
         id: list
         size_hint: None, None
+        spacing: self.height * 0.01
         size: self.minimum_size if button.state == 'down' else (0, 0)
         opacity: 0 if button.state != 'down' else 1
         x: root.p_height
 
+# On the server node, add the database sub_node
 <ServerListItem>:
     ListItem:
         id: databases
@@ -32,6 +66,7 @@
         on_expand: root.dispatch('on_expand')
         show_children: True
 
+# On the database node, add the table sub_node
 <DatabaseListItem>:
     ListItem:
         id: tables
@@ -39,6 +74,7 @@
         on_expand: root.dispatch('on_expand', 'tables')
         show_children: True
 
+# The column item is just a label
 <ColumnListItem>:
     size_hint: None, None
     size: label.size
@@ -49,25 +85,48 @@
         height: root.p_height
         width: self.texture_size[0]
 
+# The main left pain formatting
 <Browser>:
+    # The Add server button
     Button:
         size_hint: None, 0.05
         width: self.height
         pos_hint: {'top': 1}
+        background_normal: '../res/plus.png'
+        background_down: '../res/plus_down.png'
+        border: [0, 0, 0, 0]
+        on_release: root.add_new_server()
+    # Remove server button
     Button:
         size_hint: None, 0.05
         width: self.height
         pos_hint: {'top': 1}
         x: self.height
+        background_normal: '../res/minus.png'
+        background_down: '../res/minus_down.png'
+        border: [0, 0, 0, 0]
+        on_release: root.delete_server()
+    # reload server button
     Button:
         size_hint: None, 0.05
         width: self.height
         pos_hint: {'top': 1}
         x: self.height * 2
-    Button:
+        background_normal: '../res/reload.png'
+        background_down: '../res/reload_down.png'
+        border: [0, 0, 0, 0]
+        on_release: root.refresh_servers()
+    # The limit text box
+    TextInput:
         size_hint: None, 0.05
-        width: self.height
-        pos_hint: {'right': 1, 'top': 1}
+        width: self.height * 2
+        pos_hint: {'top': 1}
+        x: self.height * 3
+        text: '100'
+        hint_text: 'Default View Size'
+        multiline: False
+        on_text_validate: root.set_default_limit(self.text)
+    # The rest of the pane is just a scroll view with a gridlayout that it sizes to
     ScrollView:
         id: scroll
         size_hint: 1, 0.95
@@ -80,3 +139,78 @@
             size_hint: None, None
             size: self.minimum_size
             pos_hint: {'top': 1}
+
+# The popup for adding a server
+# very straight forward on this one, imo
+<NewServerPopUp>:
+    title: 'Add a new server'
+    size_hint: 0.75, 0.75
+    RelativeLayout:
+        Label:
+            id: name
+            size_hint: 0.5, 0.25
+            pos_hint: {'y': 0.75}
+            text: 'Server Name: '
+            font_size: self.height * 0.25
+        TextInput:
+            id: name_input
+            size_hint: 0.5, 0.25
+            pos_hint: {'x': 0.5, 'y': 0.75}
+            hint_text: 'Server Name'
+            font_size: self.height * 0.25
+        Label:
+            id: host
+            size_hint: 0.25, 0.25
+            pos_hint: {'y': 0.5}
+            text: 'Host: '
+            font_size: self.height * 0.25
+        TextInput:
+            id: host_input
+            size_hint: 0.25, 0.25
+            pos_hint: {'x': 0.25, 'y': 0.50}
+            hint_text: 'Host Value'
+            font_size: self.height * 0.25
+        Label:
+            id: port
+            size_hint: 0.25, 0.25
+            pos_hint: {'x': 0.50, 'y': 0.50}
+            text: 'Port: '
+            font_size: self.height * 0.25
+        TextInput:
+            id: port_input
+            size_hint: 0.25, 0.25
+            pos_hint: {'x': 0.75, 'y': 0.50}
+            hint_text: 'Port Value'
+            font_size: self.height * 0.25
+        Label:
+            id: user
+            size_hint: 0.25, 0.25
+            pos_hint: {'y': 0.25}
+            text: 'User:'
+            font_size: self.height * 0.25
+        TextInput:
+            id: user_input
+            size_hint: 0.25, 0.25
+            pos_hint: {'x': 0.25, 'y': 0.25}
+            hint_text: 'User'
+            font_size: self.height * 0.25
+        Label:
+            id: password
+            size_hint: 0.25, 0.25
+            pos_hint: {'x': 0.50, 'y': 0.25}
+            text: 'Password:'
+            font_size: self.height * 0.25
+        TextInput:
+            id: password_input
+            size_hint: 0.25, 0.25
+            pos_hint: {'x': 0.75, 'y': 0.25}
+            password: True
+            hint_text: 'password'
+            font_size: self.height * 0.25
+        Button:
+            size_hint: 1, 0.25
+            text: 'Add Server'
+            font_size: self.height * 0.25
+            on_release:
+                root.add_server()
+                self.dismiss()
