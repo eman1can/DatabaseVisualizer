@@ -1,0 +1,80 @@
+#:import TableView table_view.TableView
+#:import Browser browser.Browser
+# Make sure we have our panes imported so we don;t have any errors
+<MainWindow>:
+    # This is the left pane which has the splitter resize based on the window height until you move it
+    Splitter:
+        id: browser_splitter
+        sizable_from: 'right'
+        min_size_hint: (root.height * 0.5) / root.width if not root.browser_minimized else 0, 1
+        size_hint: (root.height * 0.5) / root.width if not root.browser_minimized else 0, 1
+        opacity: 1 if not root.browser_minimized else 0
+        Browser:
+            id: browser_tab
+            text: 'Database Browser'
+            on_load_table: root.load_table(*args)
+            on_limit: root.set_limit(*args)
+            # Add out call backs for our browser
+    # The middle pane sits between the two splitters and deosn't need one of it's own
+    TableView:
+        id: table_view
+        size_hint: (graph_view.x - browser_splitter.right) / root.width, 1
+        pos_hint: {'x': browser_splitter.width / root.width}
+        on_toast: root.show_toast(*args)
+        on_permission: root.get_permission(*args)
+        # Callbacks
+        # Tell them to open somehting when they open the program
+        Label:
+            id: info
+            text: 'Open something on the left!'
+            font_size: self.height * 0.05
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            opacity: 1 if (len(table_view.ids.grid.data) == 0 or table_view.ids.grid.data is None) else 0
+    # The splitter with the wordcloud image on it
+    Splitter:
+        id: graph_splitter
+        sizable_from: 'left'
+        min_size_hint: 0.1, 1
+        size_hint: 0.1, 1
+        pos_hint: {'x': (root.width - self.width) / root.width}
+        RelativeLayout:
+            id: graph_view
+            Image:
+                id: word_cloud
+    # This is the toast, a fake toast.
+    # essentialy a transparent label we fade in and out
+    Label:
+        id: toast
+        color: 1, 0, 0, 1
+        font_size: self.height * 0.25
+        background_color: 0, 0, 0, 1
+        size_hint: 0.4, 0.2
+        pos_hint: {'center_x': 0.5, 'y': 0.1}
+        opacity: 0
+
+# The warning popup for deleteing a row
+<PermissionPopup>:
+    title: 'Are you sure?'
+    RelativeLayout:
+        Label:
+            id: label
+            text: 'Are you sure?' # This gets changed by the calling function
+            font_size: self.height * 0.2
+            text_size: self.size
+            halign: 'center'
+            valign: 'middle'
+            color: 0, 0, 0, 1
+            size_hint: 1, 0.4
+            pos_hint: {'top': 1}
+        Button:
+            id: confirm
+            font_size: self.height * 0.5
+            size_hint: 1, 0.3
+            text: 'Yes Sir!'
+            pos_hint: {'top': 0.6}
+            on_release: root.dismiss()
+        Button:
+            text: 'Uhm. I am not.'
+            font_size: self.height * 0.5
+            size_hint: 1, 0.3
+            on_release: root.dismiss()
